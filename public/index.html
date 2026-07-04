@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrestaFlow - Suivi de Prestation</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- PWA & iOS Web App Support -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PrestaFlow">
+  <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+  <div class="background-gradients">
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+  </div>
+
+  <main class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <i class="fa-solid fa-truck-ramp-box logo-icon"></i>
+        <span>PrestaFlow</span>
+      </div>
+      <p class="tagline">Création simplifiée de dossiers de prestations</p>
+    </header>
+
+    <div class="glass-card">
+      <!-- Progressive Step Indicator -->
+      <div class="step-indicator">
+        <div class="step-node active" id="node-1" data-step="1">
+          <span class="node-number">1</span>
+          <span class="node-label">Infos & Photo</span>
+        </div>
+        <div class="step-line" id="line-1"></div>
+        <div class="step-node" id="node-2" data-step="2">
+          <span class="node-number">2</span>
+          <span class="node-label">Statut</span>
+        </div>
+        <div class="step-line" id="line-2"></div>
+        <div class="step-node" id="node-3" data-step="3">
+          <span class="node-number">3</span>
+          <span class="node-label">Détails</span>
+        </div>
+      </div>
+
+      <form id="prestation-form" novalidate>
+        <!-- STEP 1: General Info & Upload -->
+        <div class="form-step active" id="step-1">
+          <h2 class="step-title"><i class="fa-solid fa-file-contract"></i> Identification & Documents</h2>
+          <p class="step-desc">Saisissez le numéro de bon de prestation et prenez en photo le document.</p>
+
+          <div class="input-group">
+            <label for="bpNumber">Numéro de Bon de Prestation (BP)</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-hashtag input-icon"></i>
+              <input type="text" id="bpNumber" name="bpNumber" placeholder="Ex: BP-987654" required autocomplete="off">
+            </div>
+            <div class="error-message" id="error-bpNumber">Veuillez renseigner ce champ.</div>
+          </div>
+
+          <div class="input-group">
+            <label>Photo des documents de prestation</label>
+            <div class="upload-area" id="upload-zone">
+              <input type="file" id="photo" name="photo" accept="image/jpeg, image/png, image/jpg" capture="environment" class="hidden-file-input" required>
+              <div class="upload-placeholder">
+                <i class="fa-solid fa-camera-retro upload-icon"></i>
+                <p class="upload-text-main">Prendre en photo / Charger un fichier</p>
+                <p class="upload-text-sub">Formats acceptés : JPG, PNG (Max 10 Mo)</p>
+              </div>
+              <div class="upload-preview hidden" id="upload-preview-container">
+                <img src="" alt="Aperçu du document" id="preview-img">
+                <button type="button" class="btn-remove-photo" id="btn-remove-photo" title="Supprimer la photo">
+                  <i class="fa-solid fa-trash-can"></i> Retirer la photo
+                </button>
+              </div>
+            </div>
+            <div class="error-message" id="error-photo">Une photo des documents est requise.</div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-primary btn-next" data-next="2">
+              Continuer <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Prestation Done or Not -->
+        <div class="form-step" id="step-2">
+          <h2 class="step-title"><i class="fa-solid fa-clipboard-question"></i> État de la prestation</h2>
+          <p class="step-desc">La prestation a-t-elle été exécutée avec succès ?</p>
+
+          <div class="choice-cards">
+            <label class="choice-card success-hover">
+              <input type="radio" name="prestationFaite" value="oui" required>
+              <div class="choice-card-content">
+                <div class="choice-icon success-color">
+                  <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h3>Prestation Faite</h3>
+                <p>Le service a été accompli et validé.</p>
+              </div>
+            </label>
+
+            <label class="choice-card danger-hover">
+              <input type="radio" name="prestationFaite" value="non" required>
+              <div class="choice-card-content">
+                <div class="choice-icon danger-color">
+                  <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+                <h3>Prestation Non Faite</h3>
+                <p>La prestation a rencontré un problème ou est incomplète.</p>
+              </div>
+            </label>
+          </div>
+          <div class="error-message center-text" id="error-prestationFaite">Veuillez sélectionner une option.</div>
+
+          <div class="form-actions space-between">
+            <button type="button" class="btn btn-secondary btn-prev" data-prev="1">
+              <i class="fa-solid fa-arrow-left"></i> Retour
+            </button>
+            <button type="button" class="btn btn-primary btn-next" data-next="3" id="btn-step-2-next">
+              Continuer <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: Conditional Details -->
+        <div class="form-step" id="step-3">
+          <h2 class="step-title"><i class="fa-solid fa-circle-info"></i> Informations complémentaires</h2>
+          <p class="step-desc" id="step-3-desc">Détails requis pour la validation du dossier.</p>
+
+          <!-- OPTION A: Prestation FAITE (Oui) -->
+          <div class="conditional-section hidden" id="section-prestation-faite">
+            <div class="status-summary success-bg">
+              <div class="status-summary-icon"><i class="fa-solid fa-circle-check"></i></div>
+              <div>
+                <h3>Prestation Validée</h3>
+                <p>Le dossier va être enregistré en tant que prestation exécutée avec succès.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- OPTION B: Prestation NON FAITE (Non) -->
+          <div class="conditional-section hidden" id="section-prestation-non-faite">
+            <div class="input-group">
+              <label for="raison">Pourquoi la prestation n'a-t-elle pas été faite ?</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-circle-exclamation input-icon"></i>
+                <select id="raison" name="raison">
+                  <option value="" disabled selected>Choisir une raison...</option>
+                  <option value="prestation_non_faite">Prestation non faite (non exécutée)</option>
+                  <option value="documents_manquants">Documents manquants</option>
+                  <option value="donnees_incompletes">Données incomplètes</option>
+                </select>
+              </div>
+              <div class="error-message" id="error-raison">Veuillez sélectionner le motif général.</div>
+            </div>
+
+            <!-- SUB-SECTION B1: Prestation non faite -->
+            <div class="sub-conditionalhidden hidden" id="sub-prestation-non-faite">
+              <div class="input-group">
+                <label>À replanifier ?</label>
+                <div class="radio-group-inline">
+                  <label class="radio-inline-label">
+                    <input type="radio" name="replanifier" value="oui">
+                    <span>Oui</span>
+                  </label>
+                  <label class="radio-inline-label">
+                    <input type="radio" name="replanifier" value="non">
+                    <span>Non</span>
+                  </label>
+                </div>
+                <div class="error-message" id="error-replanifier">Indiquez si la prestation doit être replanifiée.</div>
+              </div>
+
+              <!-- Replanifier: OUI -> Date -->
+              <div class="input-group hidden" id="input-replanifier-date">
+                <label for="replanifierDate">Date de replanification</label>
+                <div class="input-wrapper">
+                  <i class="fa-solid fa-calendar-days input-icon"></i>
+                  <input type="date" id="replanifierDate" name="replanifierDate">
+                </div>
+                <div class="error-message" id="error-replanifierDate">Sélectionnez une date de replanification.</div>
+              </div>
+
+              <!-- Replanifier: NON -> Motif -->
+              <div class="input-group hidden" id="input-motif">
+                <label for="motifPrestationNonFaite">Motif d'annulation / non-replanification</label>
+                <div class="input-wrapper">
+                  <i class="fa-solid fa-comment-dots input-icon textarea-icon"></i>
+                  <textarea id="motifPrestationNonFaite" name="motifPrestationNonFaite" rows="3" placeholder="Saisir la raison de la non-replanification..."></textarea>
+                </div>
+                <div class="error-message" id="error-motifPrestationNonFaite">Veuillez détailler le motif.</div>
+              </div>
+            </div>
+
+            <!-- SUB-SECTION B2: Documents manquants -->
+            <div class="sub-conditionalhidden hidden" id="sub-documents-manquants">
+              <div class="input-group">
+                <label>Quels documents sont manquants ?</label>
+                <div class="checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" name="documentsManquants" value="bon_prestation">
+                    <span class="custom-checkbox"></span>
+                    <span>Bon de prestation</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" name="documentsManquants" value="bon_pesee">
+                    <span class="custom-checkbox"></span>
+                    <span>Bon de pesée</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" name="documentsManquants" value="preuve_paiement">
+                    <span class="custom-checkbox"></span>
+                    <span>Preuve de paiement si comptant</span>
+                  </label>
+                </div>
+                <div class="error-message" id="error-documentsManquants">Veuillez cocher au moins un document.</div>
+              </div>
+
+              <div class="input-group">
+                <label>Qu'a-t-on prévu de faire ?</label>
+                <div class="radio-group-vertical">
+                  <label class="radio-label">
+                    <input type="radio" name="actionPrevue" value="point_chauffeur">
+                    <span class="custom-radio"></span>
+                    <div>
+                      <strong>Point avec chauffeur</strong>
+                      <span>Faire le point avec le conducteur à son retour.</span>
+                    </div>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" name="actionPrevue" value="point_rex">
+                    <span class="custom-radio"></span>
+                    <div>
+                      <strong>Point avec REX</strong>
+                      <span>Escalader l'anomalie au Responsable d'Exploitation.</span>
+                    </div>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" name="actionPrevue" value="attendre_reception">
+                    <span class="custom-radio"></span>
+                    <div>
+                      <strong>Attendre réception</strong>
+                      <span>Patienter jusqu'à la transmission des pièces justificatives.</span>
+                    </div>
+                  </label>
+                </div>
+                <div class="error-message" id="error-actionPrevue">Sélectionnez l'action de suivi prévue.</div>
+              </div>
+            </div>
+
+            <!-- SUB-SECTION B3: Données incomplètes -->
+            <div class="sub-conditionalhidden hidden" id="sub-donnees-incompletes">
+              <div class="input-group">
+                <label>Qu'a-t-on prévu de faire ?</label>
+                <div class="radio-group-vertical">
+                  <label class="radio-label">
+                    <input type="radio" name="actionPrevueDI" value="point_chauffeur">
+                    <span class="custom-radio"></span>
+                    <div>
+                      <strong>Point avec chauffeur</strong>
+                      <span>Préciser les données manquantes avec le conducteur.</span>
+                    </div>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" name="actionPrevueDI" value="point_rex">
+                    <span class="custom-radio"></span>
+                    <div>
+                      <strong>Point avec REX</strong>
+                      <span>Consulter le Responsable d'Exploitation.</span>
+                    </div>
+                  </label>
+                </div>
+                <div class="error-message" id="error-actionPrevueDI">Sélectionnez l'action de suivi prévue.</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="form-actions space-between">
+            <button type="button" class="btn btn-secondary btn-prev" data-prev="2">
+              <i class="fa-solid fa-arrow-left"></i> Retour
+            </button>
+            <button type="submit" class="btn btn-success" id="btn-submit">
+              Enregistrer le Dossier <i class="fa-solid fa-floppy-disk"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Status Screens (Success / Loading) -->
+      <div class="status-overlay hidden" id="status-overlay">
+        <div class="status-screen" id="status-loading">
+          <div class="spinner"></div>
+          <h3>Enregistrement du dossier...</h3>
+          <p>Création du dossier sur le serveur et transfert de la photo.</p>
+        </div>
+
+        <div class="status-screen hidden" id="status-success">
+          <div class="status-icon-circle success-bg">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <h3 class="success-color-text">Dossier créé avec succès !</h3>
+          <p class="status-message">Le dossier <strong id="success-folder-name">BP-XXXX</strong> a été enregistré sur le serveur.</p>
+          <div class="details-box">
+            <p><strong>Emplacement :</strong> <span id="success-storage-path">/chemin/serveur</span></p>
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-reset">
+            <i class="fa-solid fa-plus"></i> Saisir une autre prestation
+          </button>
+        </div>
+
+        <div class="status-screen hidden" id="status-error">
+          <div class="status-icon-circle danger-bg">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <h3 class="danger-color-text">Une erreur est survenue</h3>
+          <p class="status-message" id="error-server-msg">Impossible de créer le dossier sur le serveur. Veuillez réessayer.</p>
+          <button type="button" class="btn btn-secondary" id="btn-retry-close">
+            <i class="fa-solid fa-xmark"></i> Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <p>&copy; 2026 - PrestaFlow - Solution interne de suivi logistique</p>
+  </footer>
+
+  <!-- App Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
