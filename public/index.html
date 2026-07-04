@@ -21,12 +21,35 @@
   <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
+  <!-- GATEWAY LOGIN OVERLAY -->
+  <div class="login-overlay" id="gateway-overlay">
+    <div class="login-box">
+      <div class="logo" style="margin-bottom: 20px;">
+        <i class="fa-solid fa-truck-ramp-box logo-icon"></i>
+        <span>PrestaFlow</span>
+      </div>
+      <h3 class="login-title">Accès Sécurisé</h3>
+      <form id="gateway-form">
+        <div class="input-group">
+          <div class="input-wrapper">
+            <i class="fa-solid fa-key input-icon"></i>
+            <input type="password" id="gateway-pass" placeholder="Entrez le mot de passe..." required>
+          </div>
+          <div class="error-message" id="gateway-error" style="display: none;">Mot de passe incorrect.</div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+          Valider <i class="fa-solid fa-circle-check"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <div class="background-gradients">
     <div class="circle circle-1"></div>
     <div class="circle circle-2"></div>
   </div>
 
-  <main class="app-container">
+  <main class="app-container" id="main-app" style="display: none;">
     <header class="app-header">
       <div class="logo">
         <i class="fa-solid fa-truck-ramp-box logo-icon"></i>
@@ -248,14 +271,6 @@
                       <span>Escalader l'anomalie au Responsable d'Exploitation.</span>
                     </div>
                   </label>
-                  <label class="radio-label">
-                    <input type="radio" name="actionPrevue" value="attendre_reception">
-                    <span class="custom-radio"></span>
-                    <div>
-                      <strong>Attendre réception</strong>
-                      <span>Patienter jusqu'à la transmission des pièces justificatives.</span>
-                    </div>
-                  </label>
                 </div>
                 <div class="error-message" id="error-actionPrevue">Sélectionnez l'action de suivi prévue.</div>
               </div>
@@ -340,6 +355,10 @@
     <p>&copy; 2026 - PrestaFlow - Solution interne de suivi logistique</p>
   </footer>
 
+  <!-- App Config and SDKs -->
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <!-- App Logic -->
   <script src="app.js"></script>
 </body>

@@ -9,6 +9,47 @@ if ('serviceWorker' in navigator) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Gateway Authentication Logic
+  const gatewayOverlay = document.getElementById('gateway-overlay');
+  const gatewayForm = document.getElementById('gateway-form');
+  const gatewayPass = document.getElementById('gateway-pass');
+  const gatewayError = document.getElementById('gateway-error');
+  const mainApp = document.getElementById('main-app');
+
+  const { AGENT_PASSWORD, ADMIN_PASSWORD } = window.PRESTAFLOW_CONFIG;
+
+  function checkGatewaySession() {
+    const session = sessionStorage.getItem('prestaflow_agent_session');
+    if (session === AGENT_PASSWORD) {
+      gatewayOverlay.style.display = 'none';
+      mainApp.style.display = 'block';
+    } else if (session === ADMIN_PASSWORD) {
+      window.location.href = '/admin';
+    } else {
+      gatewayOverlay.style.display = 'flex';
+      mainApp.style.display = 'none';
+    }
+  }
+
+  gatewayForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pass = gatewayPass.value;
+    if (pass === AGENT_PASSWORD) {
+      sessionStorage.setItem('prestaflow_agent_session', pass);
+      gatewayOverlay.style.display = 'none';
+      mainApp.style.display = 'block';
+      gatewayError.style.display = 'none';
+    } else if (pass === ADMIN_PASSWORD) {
+      localStorage.setItem('prestaflow_admin_session', pass);
+      window.location.href = '/admin';
+    } else {
+      gatewayError.style.display = 'block';
+      gatewayPass.value = '';
+    }
+  });
+
+  checkGatewaySession();
+
   // DOM Elements
   const form = document.getElementById('prestation-form');
   const bpInput = document.getElementById('bpNumber');
@@ -325,7 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
     errMsg.style.display = 'block';
   }
 
-  // Clear errors helper
   function clearError(fieldId) {
     const errMsg = document.getElementById(`error-${fieldId}`);
     if (errMsg) {
@@ -444,10 +484,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================
-  // Form Submission
+  // Form Submission (Supabase)
   // ==========================================
 
-  form.addEventListener('submit', (e) => {
+  // Initialize Supabase Client
+  const { SUPABASE_URL, SUPABASE_ANON_KEY, STORAGE_BUCKET_NAME } = window.PRESTAFLOW_CONFIG;
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     if (!validateStep(1) || !validateStep(2) || !validateStep3()) {
@@ -460,67 +504,84 @@ document.addEventListener('DOMContentLoaded', () => {
     statusSuccess.classList.add('hidden');
     statusError.classList.add('hidden');
     
-    const formData = new FormData();
-    formData.append('bpNumber', bpInput.value.trim());
-    formData.append('photo', selectedFile);
-    
-    const prestFaite = document.querySelector('input[name="prestationFaite"]:checked').value;
-    formData.append('prestationFaite', prestFaite);
-    
-    if (prestFaite === 'non') {
-      const reason = selectRaison.value;
-      formData.append('raison', reason);
-      
-      if (reason === 'prestation_non_faite') {
-        const replanifier = document.querySelector('input[name="replanifier"]:checked').value;
-        formData.append('replanifier', replanifier);
-        
-        if (replanifier === 'oui') {
-          formData.append('replanifierDate', replanifierDateInput.value);
-        } else {
-          formData.append('motifPrestationNonFaite', motifInput.value.trim());
-        }
-      } 
-      else if (reason === 'documents_manquants') {
-        const checkedDocs = Array.from(document.querySelectorAll('input[name="documentsManquants"]:checked')).map(cb => cb.value);
-        formData.append('documentsManquants', JSON.stringify(checkedDocs));
-        formData.append('actionPrevue', document.querySelector('input[name="actionPrevue"]:checked').value);
-      } 
-      else if (reason === 'donnees_incompletes') {
-        formData.append('actionPrevue', document.querySelector('input[name="actionPrevueDI"]:checked').value);
-      }
-    }
+    try {
+      const bpVal = bpInput.value.trim();
+      const sanitizedBp = bpVal.replace(/[^a-zA-Z0-9-_]/g, '');
+      const ext = selectedFile.name.split('.').pop() || 'jpg';
+      const photoPath = `${sanitizedBp}_${Date.now()}.${ext}`;
 
-    // Submit data to Express API
-    fetch('/api/prestation', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => {
-      if (!response.ok) {
-        return response.json().then(errData => {
-          throw new Error(errData.error || 'Erreur serveur.');
+      // 1. Upload photo to Supabase Storage Bucket
+      const { data: uploadData, error: uploadError } = await supabaseClient.storage
+        .from(STORAGE_BUCKET_NAME)
+        .upload(photoPath, selectedFile, {
+          cacheControl: '3600',
+          upsert: false
         });
+
+      if (uploadError) {
+        throw new Error("Échec du téléversement de la photo: " + uploadError.message);
       }
-      return response.json();
-    })
-    .then(data => {
-      if (data.success) {
-        // Show Success screen
-        statusLoading.classList.add('hidden');
-        statusSuccess.classList.remove('hidden');
-        successFolderName.textContent = data.folderName;
-        successStoragePath.textContent = data.storagePath;
-      } else {
-        throw new Error(data.error || 'Erreur inconnue.');
+
+      // 2. Prepare database fields
+      const prestFaite = document.querySelector('input[name="prestationFaite"]:checked').value;
+      
+      let raison = null;
+      let replanifier = null;
+      let replanifierDate = null;
+      let motifPrestationNonFaite = null;
+      let documentsManquants = null;
+      let actionPrevue = null;
+
+      if (prestFaite === 'non') {
+        raison = selectRaison.value;
+        if (raison === 'prestation_non_faite') {
+          replanifier = document.querySelector('input[name="replanifier"]:checked').value;
+          if (replanifier === 'oui') {
+            replanifierDate = replanifierDateInput.value;
+          } else {
+            motifPrestationNonFaite = motifInput.value.trim();
+          }
+        } else if (raison === 'documents_manquants') {
+          documentsManquants = Array.from(document.querySelectorAll('input[name="documentsManquants"]:checked')).map(cb => cb.value);
+          actionPrevue = document.querySelector('input[name="actionPrevue"]:checked').value;
+        } else if (raison === 'donnees_incompletes') {
+          actionPrevue = document.querySelector('input[name="actionPrevueDI"]:checked').value;
+        }
       }
-    })
-    .catch(error => {
-      console.error('Erreur soumission:', error);
+
+      // 3. Insert record into prestations table
+      const { data: insertData, error: insertError } = await supabaseClient
+        .from('prestations')
+        .insert([
+          {
+            bp_number: bpVal,
+            prestation_faite: prestFaite,
+            raison: raison,
+            replanifier: replanifier,
+            replanifier_date: replanifierDate || null,
+            motif_prestation_non_faite: motifPrestationNonFaite || null,
+            documents_manquants: documentsManquants,
+            action_prevue: actionPrevue,
+            photo_path: photoPath
+          }
+        ]);
+
+      if (insertError) {
+        throw new Error("Échec d'enregistrement en base de données: " + insertError.message);
+      }
+
+      // Show Success screen
+      statusLoading.classList.add('hidden');
+      statusSuccess.classList.remove('hidden');
+      successFolderName.textContent = `BP_${sanitizedBp}`;
+      successStoragePath.textContent = 'Stockage Cloud Supabase';
+
+    } catch (error) {
+      console.error('Erreur soumission Supabase:', error);
       statusLoading.classList.add('hidden');
       statusError.classList.remove('hidden');
-      errorServerMsg.textContent = error.message || 'Impossible de créer le dossier sur le serveur. Veuillez réessayer.';
-    });
+      errorServerMsg.textContent = error.message || 'Une erreur est survenue lors de l\'enregistrement.';
+    }
   });
 
   // Reset form after success to enter another prestation

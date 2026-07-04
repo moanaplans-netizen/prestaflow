@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrestaFlow - Espace Administration</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Admin specific stylesheet overrides */
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    
+    .admin-title-area {
+      text-align: left;
+    }
+    
+    .admin-card {
+      max-width: 100% !important;
+      width: 100%;
+    }
+    
+    .filters-bar {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--input-border);
+      background: rgba(13, 17, 28, 0.4);
+      margin-bottom: 20px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    
+    th, td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--input-border);
+    }
+    
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+    
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.01);
+    }
+    
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid var(--success-border);
+    }
+    
+    .badge-danger {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--danger);
+      border: 1px solid var(--danger-border);
+    }
+    
+    .action-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      font-family: var(--font-family);
+      transition: var(--transition-smooth);
+    }
+    
+    .action-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    
+    .action-btn-secondary {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: var(--text-secondary);
+    }
+    
+    .action-btn-secondary:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-primary);
+    }
+    
+    .login-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    
+    .login-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--border-radius-lg);
+      padding: 30px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: var(--shadow-premium);
+    }
+    
+    .login-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+    
+    .empty-icon {
+      font-size: 3rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    
+    .btn-export-csv {
+      background: #0284c7;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+    
+    .btn-export-csv:hover {
+      background: #0369a1;
+      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.45);
+    }
+    
+    .thumbnail-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: var(--transition-smooth);
+    }
+    
+    .thumbnail-img:hover {
+      transform: scale(1.1);
+    }
+    
+    /* Image lightbox modal */
+    .lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 11, 15, 0.95);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .lightbox-content {
+      position: relative;
+      max-width: 90%;
+      max-height: 90%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 80vh;
+      border-radius: var(--border-radius-sm);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    
+    .lightbox-close {
+      position: absolute;
+      top: -45px;
+      right: 0;
+      color: #fff;
+      font-size: 2rem;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+    
+    @media(max-width: 768px) {
+      .filters-bar {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      
+      .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="background-gradients">
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+  </div>
+
+  <main class="app-container" style="max-width: 960px;">
+    
+
+    <!-- MAIN ADMIN INTERFACE -->
+    <header class="admin-header">
+      <div class="admin-title-area">
+        <div class="logo">
+          <i class="fa-solid fa-truck-ramp-box logo-icon"></i>
+          <span>PrestaFlow <span style="font-size: 1rem; color: var(--text-secondary); font-weight: 300;">Console Admin</span></span>
+        </div>
+        <p class="tagline">Gérez et téléchargez les dossiers de prestations de vos agents</p>
+      </div>
+      <div>
+        <button type="button" class="btn btn-export-csv" id="btn-export-csv">
+          Exporter en CSV <i class="fa-solid fa-file-csv"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="glass-card admin-card">
+      <!-- Search & Filters -->
+      <div class="filters-bar">
+        <div class="input-wrapper">
+          <i class="fa-solid fa-magnifying-glass input-icon"></i>
+          <input type="text" id="search-bp" placeholder="Rechercher par numéro de BP...">
+        </div>
+        
+        <div class="input-wrapper">
+          <i class="fa-solid fa-filter input-icon"></i>
+          <select id="filter-status">
+            <option value="">Tous les statuts</option>
+            <option value="faite">Prestation Faite</option>
+            <option value="non_faite">Prestation Non Faite</option>
+          </select>
+        </div>
+        
+        <div class="input-wrapper">
+          <i class="fa-solid fa-calendar-day input-icon"></i>
+          <select id="filter-date">
+            <option value="">Toutes les dates</option>
+            <option value="today">Aujourd'hui</option>
+            <option value="week">7 derniers jours</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Prestations Table -->
+      <div class="table-container">
+        <table id="prestations-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>N° Bon (BP)</th>
+              <th>Photo</th>
+              <th>Statut</th>
+              <th>Détails de l'anomalie</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="prestations-list">
+            <!-- Dynamically populated rows -->
+            <tr>
+              <td colspan="6" class="empty-state">
+                <div class="spinner" style="margin: 20px auto;"></div>
+                Chargement des prestations...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Lightbox Modal -->
+  <div class="lightbox hidden" id="image-lightbox">
+    <div class="lightbox-content">
+      <button class="lightbox-close" id="lightbox-close">&times;</button>
+      <img src="" alt="Agrandissement" class="lightbox-img" id="lightbox-img">
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <p>&copy; 2026 - PrestaFlow - Solution interne de suivi logistique</p>
+  </footer>
+
+  <!-- JS SDKs and dependencies -->
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
