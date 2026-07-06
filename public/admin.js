@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function fetchData() {
     prestationsList.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-state">
+        <td colspan="7" class="empty-state">
           <div class="spinner" style="margin: 20px auto;"></div>
           Nettoyage et chargement des dossiers...
         </td>
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Erreur lors du traitement des données:', error);
       prestationsList.innerHTML = `
         <tr>
-          <td colspan="6" class="empty-state">
+          <td colspan="7" class="empty-state">
             <i class="fa-solid fa-circle-xmark empty-icon danger-color"></i>
             <p>Erreur de traitement : ${error.message}</p>
           </td>
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filteredPrestations.length === 0) {
       prestationsList.innerHTML = `
         <tr>
-          <td colspan="6" class="empty-state">
+          <td colspan="7" class="empty-state">
             <i class="fa-solid fa-folder-open empty-icon"></i>
             <p>Aucun dossier de prestation ne correspond aux critères.</p>
           </td>
@@ -238,6 +238,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+      let suivisHtml = '-';
+      if (item.suivi_fournisseurs && Array.isArray(item.suivi_fournisseurs)) {
+        suivisHtml = item.suivi_fournisseurs.map((sf, idx) => {
+          return `
+            <div class="admin-supplier-tag" style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.05); text-align: left; line-height: 1.3;">
+              <strong>#${idx+1} : ${sf.fournisseur}</strong><br>
+              <span style="font-size: 0.75rem; color: var(--text-secondary); display: inline-block; margin-top: 2px;">
+                ${sf.bon_pesee ? `Pesée: ${sf.bon_pesee}` : ''}
+                ${sf.nom_client ? ` | Client: ${sf.nom_client}` : ''}<br>
+                ${sf.nom_chauffeur ? `Chauffeur: ${sf.nom_chauffeur}` : ''}
+                ${sf.mesure ? ` | Mesure: ${sf.mesure}` : ''}<br>
+                ${sf.type_dechet ? `Déchet: ${sf.type_dechet}` : ''}
+              </span>
+            </div>
+          `;
+        }).join('');
+      }
+
       tr.innerHTML = `
         <td>${dateStr}</td>
         <td><strong>${item.bp_number}</strong></td>
@@ -246,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>${statusBadge}</td>
         <td style="font-size: 0.8rem; line-height: 1.4;">${detailsHtml}</td>
+        <td style="font-size: 0.8rem; line-height: 1.4;">${suivisHtml}</td>
         <td style="text-align: right;">
           <button type="button" class="action-btn download-zip-btn" data-id="${item.id}">
             Télécharger ZIP <i class="fa-solid fa-file-zipper"></i>
@@ -339,7 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
         documentsManquants: prestation.documents_manquants,
         actionPrevue: prestation.action_prevue,
         photoName: `photo.jpg`,
-        timestamp: prestation.created_at
+        timestamp: prestation.created_at,
+        suiviFournisseurs: prestation.suivi_fournisseurs
       };
 
       // 3. Prepare recap report text file
@@ -420,6 +440,20 @@ Date d'enregistrement : ${dateStr}
       }
     }
     
+    if (data.suiviFournisseurs && Array.isArray(data.suiviFournisseurs)) {
+      content += `\n==================================================\n`;
+      content += `SUIVI FOURNISSEURS (STOCKS À METTRE À JOUR)\n`;
+      content += `==================================================\n`;
+      data.suiviFournisseurs.forEach((sf, idx) => {
+        content += `- Suivi #${idx + 1} : ${sf.fournisseur}\n`;
+        if (sf.bon_pesee) content += `  N° de Bon de Pesée : ${sf.bon_pesee}\n`;
+        if (sf.nom_client) content += `  Nom du client : ${sf.nom_client}\n`;
+        if (sf.nom_chauffeur) content += `  Nom du chauffeur : ${sf.nom_chauffeur}\n`;
+        if (sf.mesure) content += `  Mesure (pesée ou volume) : ${sf.mesure}\n`;
+        if (sf.type_dechet) content += `  Type de déchet : ${sf.type_dechet}\n`;
+      });
+    }
+
     content += `\nFichiers associés :\n`;
     content += `- Photo des documents : photo.jpg\n`;
     content += `==================================================\n`;
@@ -438,7 +472,7 @@ Date d'enregistrement : ${dateStr}
 
     let csvContent = "\uFEFF"; // BOM for Excel UTF-8 support
     // Headers
-    csvContent += "Date d'enregistrement;Numero BP;Fait ?;Raison;Replanifier;Date Replanification;Motif;Documents Manquants;Action Prevue\n";
+    csvContent += "Date d'enregistrement;Numero BP;Fait ?;Raison;Replanifier;Date Replanification;Motif;Documents Manquants;Action Prevue;Suivi Fournisseurs\n";
 
     filteredPrestations.forEach(item => {
       const dateStr = new Date(item.created_at).toLocaleString('fr-FR');
@@ -457,7 +491,20 @@ Date d'enregistrement : ${dateStr}
       
       const action = item.action_prevue || "";
 
-      csvContent += `"${dateStr}";"${bp}";"${fait}";"${raison}";"${replan}";"${dateRep}";"${motif}";"${docsStr}";"${action}"\n`;
+      let suivisStr = "";
+      if (item.suivi_fournisseurs && Array.isArray(item.suivi_fournisseurs)) {
+        suivisStr = item.suivi_fournisseurs.map((sf, idx) => {
+          const fields = [];
+          if (sf.bon_pesee) fields.push(`Pesée: ${sf.bon_pesee}`);
+          if (sf.nom_client) fields.push(`Client: ${sf.nom_client}`);
+          if (sf.nom_chauffeur) fields.push(`Chauffeur: ${sf.nom_chauffeur}`);
+          if (sf.mesure) fields.push(`Mesure: ${sf.mesure}`);
+          if (sf.type_dechet) fields.push(`Déchet: ${sf.type_dechet}`);
+          return `${sf.fournisseur} (${fields.join(', ')})`;
+        }).join(' | ');
+      }
+
+      csvContent += `"${dateStr}";"${bp}";"${fait}";"${raison}";"${replan}";"${dateRep}";"${motif}";"${docsStr}";"${action}";"${suivisStr.replace(/"/g, '""')}"\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

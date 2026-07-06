@@ -93,8 +93,117 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnReset = document.getElementById('btn-reset');
   const btnRetryClose = document.getElementById('btn-retry-close');
 
+  // Supplier Tracking DOM Elements
+  const btnAddSupplier = document.getElementById('btn-add-supplier');
+  const suppliersContainer = document.getElementById('suppliers-list-container');
+
   let currentStep = 1;
   let selectedFile = null;
+  let supplierIndex = 0;
+
+  function createSupplierCardHTML(index) {
+    return `
+      <div class="supplier-card" id="supplier-card-${index}">
+        <div class="supplier-card-header">
+          <h3>Suivi Fournisseur #${index + 1}</h3>
+          <button type="button" class="btn-remove-supplier" data-index="${index}">&times;</button>
+        </div>
+        <div class="supplier-card-body">
+          <div class="input-group">
+            <label>Fournisseur</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-industry input-icon"></i>
+              <select class="supplier-select" required>
+                <option value="">-- Choisir un fournisseur --</option>
+                <option value="CET HITIAA">CET HITIAA</option>
+                <option value="CET PAIHORO">CET PAIHORO</option>
+                <option value="TAHITI AGREGATS">TAHITI AGREGATS</option>
+                <option value="TNL DV">TNL DV</option>
+                <option value="TNL DS">TNL DS</option>
+                <option value="ENVIROPOL">ENVIROPOL</option>
+                <option value="FACE">FACE</option>
+                <option value="CRT">CRT</option>
+                <option value="TANKS HU TSP">TANKS HU TSP</option>
+              </select>
+            </div>
+            <div class="error-message error-supplier-select" style="display: none; margin-top: 5px;">Veuillez choisir un fournisseur.</div>
+          </div>
+          
+          <div class="input-grid-2">
+            <div class="input-group">
+              <label>N° de Bon de Pesée</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-hashtag input-icon"></i>
+                <input type="text" class="supplier-bon-pesee" placeholder="Ex: BP-1234">
+              </div>
+            </div>
+            <div class="input-group">
+              <label>Nom du client</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-user input-icon"></i>
+                <input type="text" class="supplier-nom-client" placeholder="Ex: Air Tahiti">
+              </div>
+            </div>
+          </div>
+          
+          <div class="input-grid-2">
+            <div class="input-group">
+              <label>Nom du chauffeur</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-id-card input-icon"></i>
+                <input type="text" class="supplier-nom-chauffeur" placeholder="Ex: Teva">
+              </div>
+            </div>
+            <div class="input-group">
+              <label>Mesure (pesée ou volume)</label>
+              <div class="input-wrapper">
+                <i class="fa-solid fa-scale-balanced input-icon"></i>
+                <input type="text" class="supplier-mesure" placeholder="Ex: 12.4 t ou 5 m³">
+              </div>
+            </div>
+          </div>
+          
+          <div class="input-group">
+            <label>Type de déchet</label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-trash-can input-icon"></i>
+              <input type="text" class="supplier-type-dechet" placeholder="Ex: DIB, Gravats, Huiles...">
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renameSupplierHeaders() {
+    const cards = suppliersContainer.querySelectorAll('.supplier-card');
+    cards.forEach((card, idx) => {
+      card.querySelector('h3').textContent = `Suivi Fournisseur #${idx + 1}`;
+    });
+  }
+
+  btnAddSupplier.addEventListener('click', () => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = createSupplierCardHTML(supplierIndex);
+    const cardNode = tempDiv.firstElementChild;
+    suppliersContainer.appendChild(cardNode);
+    
+    // Add remove listener
+    cardNode.querySelector('.btn-remove-supplier').addEventListener('click', () => {
+      cardNode.remove();
+      renameSupplierHeaders();
+    });
+
+    // Clear error style on select change
+    cardNode.querySelector('.supplier-select').addEventListener('change', (e) => {
+      if (e.target.value !== '') {
+        cardNode.querySelector('.error-supplier-select').style.display = 'none';
+        e.target.parentElement.parentElement.classList.remove('has-error');
+      }
+    });
+    
+    supplierIndex++;
+  });
 
   // Set minimum date for rescheduling to today
   const today = new Date().toISOString().split('T')[0];
@@ -186,7 +295,15 @@ document.addEventListener('DOMContentLoaded', () => {
   nextButtons.forEach(button => {
     button.addEventListener('click', () => {
       const nextStep = parseInt(button.getAttribute('data-next'));
-      if (validateStep(currentStep)) {
+      let valid = false;
+      if (currentStep === 1 || currentStep === 2) {
+        valid = validateStep(currentStep);
+      } else if (currentStep === 3) {
+        valid = validateStep3();
+      } else {
+        valid = true;
+      }
+      if (valid) {
         goToStep(nextStep);
       }
     });
@@ -209,7 +326,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Can only jump forward if all intermediate steps validate
         let valid = true;
         for (let i = currentStep; i < stepTarget; i++) {
-          if (!validateStep(i)) {
+          let stepValid = false;
+          if (i === 1 || i === 2) {
+            stepValid = validateStep(i);
+          } else if (i === 3) {
+            stepValid = validateStep3();
+          } else if (i === 4) {
+            stepValid = validateStep4();
+          } else {
+            stepValid = true;
+          }
+          if (!stepValid) {
             valid = false;
             break;
           }
@@ -483,6 +610,24 @@ document.addEventListener('DOMContentLoaded', () => {
     return isValid;
   }
 
+  function validateStep4() {
+    let isValid = true;
+    const cards = suppliersContainer.querySelectorAll('.supplier-card');
+    cards.forEach(card => {
+      const select = card.querySelector('.supplier-select');
+      const err = card.querySelector('.error-supplier-select');
+      if (select.value === '') {
+        err.style.display = 'block';
+        select.parentElement.parentElement.classList.add('has-error');
+        isValid = false;
+      } else {
+        err.style.display = 'none';
+        select.parentElement.parentElement.classList.remove('has-error');
+      }
+    });
+    return isValid;
+  }
+
   // ==========================================
   // Form Submission (Supabase)
   // ==========================================
@@ -494,7 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    if (!validateStep(1) || !validateStep(2) || !validateStep3()) {
+    if (!validateStep(1) || !validateStep(2) || !validateStep3() || !validateStep4()) {
       return;
     }
     
@@ -549,6 +694,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+      // Collect supplier tracking data
+      const suiviFournisseurs = [];
+      const cards = suppliersContainer.querySelectorAll('.supplier-card');
+      cards.forEach(card => {
+        suiviFournisseurs.push({
+          fournisseur: card.querySelector('.supplier-select').value,
+          bon_pesee: card.querySelector('.supplier-bon-pesee').value.trim() || null,
+          nom_client: card.querySelector('.supplier-nom-client').value.trim() || null,
+          nom_chauffeur: card.querySelector('.supplier-nom-chauffeur').value.trim() || null,
+          mesure: card.querySelector('.supplier-mesure').value.trim() || null,
+          type_dechet: card.querySelector('.supplier-type-dechet').value.trim() || null
+        });
+      });
+
       // 3. Insert record into prestations table
       const { data: insertData, error: insertError } = await supabaseClient
         .from('prestations')
@@ -562,7 +721,8 @@ document.addEventListener('DOMContentLoaded', () => {
             motif_prestation_non_faite: motifPrestationNonFaite || null,
             documents_manquants: documentsManquants,
             action_prevue: actionPrevue,
-            photo_path: photoPath
+            photo_path: photoPath,
+            suivi_fournisseurs: suiviFournisseurs.length > 0 ? suiviFournisseurs : null
           }
         ]);
 
@@ -589,6 +749,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reset fields
     form.reset();
     resetUploadZone();
+    
+    // Clear dynamic supplier cards
+    suppliersContainer.innerHTML = '';
+    supplierIndex = 0;
     
     // Hide overlay
     statusOverlay.classList.add('hidden');

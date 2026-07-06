@@ -75,6 +75,11 @@
           <span class="node-number">3</span>
           <span class="node-label">Détails</span>
         </div>
+        <div class="step-line" id="line-3"></div>
+        <div class="step-node" id="node-4" data-step="4">
+          <span class="node-number">4</span>
+          <span class="node-label">Fournisseurs</span>
+        </div>
       </div>
 
       <form id="prestation-form" novalidate>
@@ -306,6 +311,29 @@
 
           <div class="form-actions space-between">
             <button type="button" class="btn btn-secondary btn-prev" data-prev="2">
+              <i class="fa-solid fa-arrow-left"></i> Retour
+            </button>
+            <button type="button" class="btn btn-primary btn-next" data-next="4">
+              Suivant <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 4: Supplier Tracking -->
+        <div class="form-step hidden" id="step-4">
+          <h2 class="step-title"><i class="fa-solid fa-truck-field"></i> Suivi Fournisseurs</h2>
+          <p class="step-desc">S'il y en a, quel(s) stock(s) à mettre à jour chez les fournisseurs ?</p>
+
+          <div id="suppliers-list-container" class="suppliers-list">
+            <!-- Dynamic supplier blocks will be injected here -->
+          </div>
+
+          <button type="button" class="btn btn-secondary btn-outline" id="btn-add-supplier" style="margin-top: 10px; width: auto; align-self: flex-start;">
+            <i class="fa-solid fa-plus"></i> Ajouter un suivi fournisseur
+          </button>
+
+          <div class="form-actions space-between" style="margin-top: 30px;">
+            <button type="button" class="btn btn-secondary btn-prev" data-prev="3">
               <i class="fa-solid fa-arrow-left"></i> Retour
             </button>
             <button type="submit" class="btn btn-success" id="btn-submit">
